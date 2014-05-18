@@ -6,8 +6,9 @@
   "private": true,
   "author": "Gnosis #anoncoin Freenode IRC",
   "dependencies": {
-    "sodium": "^1.0.11",
+    "bigint": "^0.4.2",
     "express": "^4.1.1",
-    "bigint": "^0.4.2"
+    "sodium": "^1.0.11",
+    "underscore": "^1.6.0"
   }
 }

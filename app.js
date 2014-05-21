@@ -2,17 +2,15 @@
 
 var sodium = require('sodium');
 var bigint = require('bigint');
-var app = require('express')();
+var restify = require('restify');
 
-app.disable('x-powered-by');    // don't reveal that we're using Express
-console.log('GNOSIS YEAH: ' + app.disabled('x-powered-by'));
+var app = restify.createServer();
 
 app.get('/', function(req,res){
-    console.log('GNOSIS YEAH: ' + app.disabled('x-powered-by'));
-    res.send('hello world');
+    res.json({msg:'hello world'});
 });
 
 var port = process.env.PORT || 8000;
 app.listen(port, function() {
-    console.log("Express listening on port %d...", port);
+    console.log("Server listening on port %d...", port);
 });

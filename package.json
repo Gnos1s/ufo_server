@@ -7,7 +7,7 @@
   "author": "Gnosis #anoncoin Freenode IRC",
   "dependencies": {
     "bigint": "^0.4.2",
-    "express": "^4.1.1",
+    "restify": "^2.8.1",
     "sodium": "^1.0.11",
     "underscore": "^1.6.0"
   }

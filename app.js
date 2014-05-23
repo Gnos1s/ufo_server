@@ -1,12 +1,16 @@
 'use strict';
 
+var fs = require('fs');
 var sodium = require('sodium');
 var bigint = require('bigint');
 var restify = require('restify');
 
+var secret = new Buffer(fs.readFileSync('server.sec'), 'base64');
+
 var app = restify.createServer();
 
-app.get('/', function(req,res){
+app.post('/getwork', function(req,res){
+    console.log('req.body is %j', req.body);
     res.json({msg:'hello world'});
 });
 

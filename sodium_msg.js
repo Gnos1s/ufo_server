@@ -3,6 +3,7 @@
 var _ = require('underscore');
 var format = require('util').format;
 var sodium = require('sodium').api;
+var assert = require('assert');
 
 
 module.exports = function(server_secret_key){

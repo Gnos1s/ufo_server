@@ -5,6 +5,8 @@ var assert = require('assert');
 var format = require('util').format;
 var level = require('level');
 
+var toFixedWidthString = require('./util').toFixedWidthString;
+
 module.exports = Db;
 function Db(dbpath_or_dbobj, cb) {
   if (!(this instanceof Db)) return new Db(dbpath_or_dbobj, cb);
@@ -33,7 +35,13 @@ function Db(dbpath_or_dbobj, cb) {
     });
   }
 
-  self.getPublicKey = getPublicKey;
+  // call this prior to sending work to the client
+  // callback receives (err, work ID)
+  function prepareWork(nick, work, cb) {
+    //XXX
+  }
 
+  self.getPublicKey = getPublicKey;
+  self.prepareWork = prepareWork;
   return self;
 }

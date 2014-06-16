@@ -45,13 +45,26 @@ function Db(dbpath_or_dbobj, cb) {
   // uses synchronization to avoid race conditions
   // callback receives (err, fac_index, already_present)
   self._ensureFactor_in_progress = false; // in progress?
-  self._next_ensureFactor = []; // array of 3-arrays: arguments to ensureFactor
+  self._waiting_ensureFactor = []; // array of functions to be called after completion
   function ensureFactor(ufoIndex, factor, cb) {
     //XXX
+  }
+
+  //XXX
+  function getFactorByIndex(ufoIndex, fac_index, cb) {
+    var f = function() {
+      //
+    };
+    if (self._ensureFactor_in_progress) {
+      self._waiting_ensureFactor.push(f);
+    } else {
+      f();
+    }
   }
 
   self.getPublicKey = getPublicKey;
   self.prepareWork = prepareWork;
   self.ensureFactor = ensureFactor;
+  self.getFactorByIndex = getFactorByIndex;
   return self;
 }

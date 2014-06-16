@@ -41,7 +41,17 @@ function Db(dbpath_or_dbobj, cb) {
     //XXX
   }
 
+  // ensure that a factor is in the DB
+  // uses synchronization to avoid race conditions
+  // callback receives (err, fac_index, already_present)
+  self._ensureFactor_in_progress = false; // in progress?
+  self._next_ensureFactor = []; // array of 3-arrays: arguments to ensureFactor
+  function ensureFactor(ufoIndex, factor, cb) {
+    //XXX
+  }
+
   self.getPublicKey = getPublicKey;
   self.prepareWork = prepareWork;
+  self.ensureFactor = ensureFactor;
   return self;
 }

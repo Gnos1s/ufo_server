@@ -46,12 +46,14 @@ app.post('/getwork', function(req,res){
   });
 });
 
+
 app.on('uncaughtException', function (req, res, route, e) {
   console.log('%s %s: ERR: %s', (new Date).toISOString(),
               req.socket.remoteAddress,
               e.message || e);
   res.send(500);
 });
+
 
 var port = process.env.PORT || 8000;
 app.listen(port, function() {

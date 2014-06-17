@@ -35,6 +35,28 @@ function Db(dbpath_or_dbobj, cb) {
     });
   }
 
+
+  // returns the next work ID for the given nick and increments it in the DB
+  // callback receives (err, next_work_id)
+  function nextWorkId(nick, cb) {
+    var db_key = format('nick::%s::next_id', nick);
+    self._db.get(db_key, function(err, next_work_id) {
+      if (err && err.status !== 404) return cb(err);
+      if (err && err.status === 404) {
+        next_work_id = 0;
+      } else {
+        next_work_id = parseInt(next_work_id, 10);
+      }
+      self._db.put(db_key, next_work_id + 1, function(err) {
+        if (err) return cb(err);
+
+        return cb(null, next_work_id);
+      });
+    });
+  }
+
+
   self.getPublicKey = getPublicKey;
+  self.nextWorkId = nextWorkId;
   return self;
 }

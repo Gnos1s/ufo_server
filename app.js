@@ -41,9 +41,19 @@ app.post('/getwork', function(req,res){
     var decrypted = fromClient(req.body.m, client_pubkey);
 
     log('FROM nick "%s": /getwork request DECRYPTED %j', nick, decrypted); //DEBUG
-    var msg = {work:[]};  //XXX
-    log('SENDING %j', msg); //DEBUG
-    res.send({m:toClient(msg, client_pubkey)});
+
+    if (!_.isNumber(decrypted) || decrypted <= 0) return res.send(400);
+    db.nextWorkId(nick, function(err, next_work_id) {
+      if (err) {
+        log('DB error nextWorkId!');
+        res.send(500);
+        process.exit(1);
+      }
+
+      var msg = {work:[]};  //XXX
+      log('SENDING %j', msg); //DEBUG
+      res.send({m:toClient(msg, client_pubkey)});
+    });
   });
 });
 

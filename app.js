@@ -24,6 +24,7 @@ var toClient = sodium_msg.toClient;
 var app = restify.createServer();
 app.use(restify.jsonBodyParser());
 
+
 app.post('/getwork', function(req,res){
   var log = function(/*arguments*/) {
     var s = format.apply(null, arguments);

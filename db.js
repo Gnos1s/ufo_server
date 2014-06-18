@@ -37,8 +37,14 @@ function Db(dbpath_or_dbobj, cb) {
 
 
   // returns the next work ID for the given nick and increments it in the DB
+  // call either as (nick, cb) or (nick, count, cb).
+  // `count` specifies number of work IDs to allocate (default is 1)
   // callback receives (err, next_work_id)
-  function nextWorkId(nick, cb) {
+  function nextWorkId(nick, count_or_cb, vararg_cb) {
+    var count = (arguments.length > 2) ? count_or_cb : 1;
+    var cb = arguments[arguments.length-1];
+    assert(_.isNumber(count));
+    assert(count >= 1);
     var db_key = format('nick::%s::next_id', nick);
     self._db.get(db_key, function(err, next_work_id) {
       if (err && err.status !== 404) return cb(err);
@@ -47,7 +53,7 @@ function Db(dbpath_or_dbobj, cb) {
       } else {
         next_work_id = parseInt(next_work_id, 10);
       }
-      self._db.put(db_key, next_work_id + 1, function(err) {
+      self._db.put(db_key, next_work_id + count, function(err) {
         if (err) return cb(err);
 
         return cb(null, next_work_id);

@@ -48,12 +48,6 @@ function validate(dreq) {
 
   if (!_.isObject(dreq)) return 'not an object';
 
-  var work_to_get = dreq.get;
-  if (!inRange(work_to_get, 1, MAX_WORK_TO_GET)) {
-    return format('invalid work to get: %j', work_to_get);
-  }
-  sanitized.get = work_to_get;
-
   var results = dreq.results;
   if (!_.isArray(results)) return '.results is not an array';
   var fail = '';
@@ -75,6 +69,13 @@ function validate(dreq) {
   });
   if (fail) return fail;
   sanitized.results = results;
+
+  var work_to_get = dreq.get;
+  var min_work_to_get = (results.length > 0) ? 0 : 1;
+  if (!inRange(work_to_get, min_work_to_get, MAX_WORK_TO_GET)) {
+    return format('invalid work to get: %j', work_to_get);
+  }
+  sanitized.get = work_to_get;
 
   var pending = dreq.pending;
   if (!_.isArray(pending)) return '.pending is not an array';

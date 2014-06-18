@@ -117,7 +117,6 @@ app.post('/getwork', function(req,res){
 
     log('FROM nick "%s": /getwork request DECRYPTED %j', nick, dreq); //DEBUG
 
-    // TODO: refactor into validation function
     if (dreq === undefined) {
       log('Could not decrypt');
       return res.send(400);

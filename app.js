@@ -24,6 +24,14 @@ var sodium_msg = require('./sodium_msg')(secret);
 var fromClient = sodium_msg.fromClient;
 var toClient = sodium_msg.toClient;
 
+
+/********** state shared by all clients *****************/
+
+
+/********** state per client *****************/
+
+
+
 var app = restify.createServer();
 app.use(restify.jsonBodyParser());
 

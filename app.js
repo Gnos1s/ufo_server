@@ -26,6 +26,7 @@ var toClient = sodium_msg.toClient;
 
 
 /********** state shared by all clients *****************/
+var active_ufos = [];
 
 
 /********** state per client *****************/
@@ -70,6 +71,7 @@ function validate(dreq) {
       fail += format('.results[%s].found is invalid: %j; ', i, r.found);
       return;
     }
+    if (!r.found) r.found = null;
     if (!inRange(r.ret, 0, 255)) {
       fail += format('.results[%s].ret is invalid: %j; ', i, r.ret);
       return;
@@ -152,6 +154,7 @@ app.post('/getwork', function(req,res){
 });
 
 
+//DEBUG
 app.on('uncaughtException', function (req, res, route, e) {
   console.log('%s %s: ERR: %s', (new Date).toISOString(),
               req.socket.remoteAddress,

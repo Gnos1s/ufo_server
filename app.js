@@ -16,7 +16,7 @@ var db = Db(DB_PATH, function(e) {
 });
 
 var MAX_WORK_TO_GET = 50000;
-var factor_regexp = RegExp('^1[0-9]{0,580}$'); // decimal digits in the largest factor of a 3840 bit number
+var factor_regexp = RegExp('^[0-9]{1,580}$'); // decimal digits in the largest factor of a 3840 bit number
 
 var secret = new Buffer(fs.readFileSync('server.sec', 'utf8'), 'base64');
 

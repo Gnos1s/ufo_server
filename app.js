@@ -7,6 +7,7 @@ var _ = require('underscore');
 var sodium = require('sodium');
 var bigint = require('bigint');
 var restify = require('restify');
+var HashTable = require('hashtable');
 
 var DB_PATH = 'state.leveldb';
 var Db = require('./db');
@@ -15,6 +16,7 @@ var db = Db(DB_PATH, function(e) {
   process.exit(1);
 });
 
+var START_B1 = 10000;
 var MAX_WORK_TO_GET = 50000;
 var factor_regexp = RegExp('^[0-9]{1,580}$'); // decimal digits in the largest factor of a 3840 bit number
 
@@ -26,10 +28,17 @@ var toClient = sodium_msg.toClient;
 
 
 /********** state shared by all clients *****************/
-var active_ufos = [];
+var active_ufos = [];     // array of ufoIndex
+
+// the following are parallel arrays, indexed by ufoIndex
+var r_ufos = [];          // array of reduced UFO candidates (as bigints)
+var f_ufos = [];          // array of arrays of known factors (as bigints) of UFO candidates
+var b1_ufos = [];         // array of B1 bounds (integers)
 
 
 /********** state per client *****************/
+var nick_list = [];              // need this because we cannot get all keys from HashTable objects
+var clients = new HashTable();   // maps nick to object; don't take security risk of using JS objects
 
 
 

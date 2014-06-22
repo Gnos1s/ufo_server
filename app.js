@@ -221,10 +221,34 @@ app.post('/getwork', function(req,res){
     });
 
     // process pending
-    //XXX
+    var new_pending = [];
+    client_obj.pending_work.forEach(function(p_w){
+      if (_.contains(dreq.pending, p_w.id)) {
+        new_pending.push(p_w);
+      } else {
+        // TODO handle completed
+      }
+    });
+    client_obj.pending_work = new_pending;
 
     // process f, produce f
-    //XXX
+    msg.f = f_ufos.map(function(facs, ufoIndex) {
+      if (ufoIndex >= dreq.f.length) {
+        return {
+          off: 0,
+          facs: facs.map(function(fac){ return fac.toString(); }),
+        };
+      }
+      var off = dreq.f[ufoIndex];
+      if (off > facs.length) {
+        log('misbehaving or server problem: client has more factors (%d) than we do (%d)!',
+            off,
+            facs.length);
+        off = facs.length;
+      }
+      var facs_to_send = [];
+      return {off: off, facs: facs_to_send};
+    });
 
     var work_to_get = dreq.get;
     db.nextWorkId(nick, work_to_get, function(err, next_work_id) {
@@ -249,6 +273,7 @@ app.post('/getwork', function(req,res){
     assert(u);
 
     var f = f_ufos[ufoIndex];
+    log('r_ufos[%d]: FOUND %s', ufoIndex, f.toString());
     f.push(found);
     u = u.div(found);
     r_ufos[ufoIndex] = u;

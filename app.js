@@ -9,6 +9,8 @@ var bigint = require('bigint');
 var restify = require('restify');
 var HashTable = require('hashtable');
 
+var ufos = require('./ufos');
+
 var DB_PATH = 'state.leveldb';
 var Db = require('./db');
 var db = Db(DB_PATH, function(e) {
@@ -39,6 +41,17 @@ var b1_ufos = [];         // array of B1 bounds (integers)
 /********** state per client *****************/
 var nick_list = [];              // need this because we cannot get all keys from HashTable objects
 var clients = new HashTable();   // maps nick to object; don't take security risk of using JS objects
+// each object:
+// {
+//  pending_work: [
+//    {
+//      id: <integer>,
+//      ufoIndex: <integer>,
+//      B1: <integer>,
+//      sigma: <integer>
+//    }, ...
+//  ]
+// }
 
 
 
@@ -147,6 +160,47 @@ app.post('/getwork', function(req,res){
       return res.send(400);
     }
 
+    var msg = {};
+
+    var client_obj = clients.get(nick);
+    assert(client_obj);
+
+    // process results
+    var unknown_work_ids = [];
+    dreq.results.forEach(function(wr){
+      // TODO bisection search
+      var p_w;
+      client_obj.pending_work.some(function(_p_w){
+        if (wr.id === _p_w.id) {
+          p_w = _p_w;
+          return true;
+        }
+      });
+      if (!p_w) {
+        unknown_work_ids.push(wr.id);
+        return;
+      }
+      // handle ret
+      //XXX
+
+      // handle found
+      if (wr.found) {
+        var found = bigint(wr.found);
+        // TODO if this work ID is in a test work pair, take care of that
+        if (found.le(1) || ) {
+          console.error('Invalid factor'); //DEBUG need real logging here
+          return;
+        }
+        //XXX
+      }
+    });
+
+    // process pending
+    //XXX
+
+    // process f, produce f
+    //XXX
+
     var work_to_get = dreq.get;
     db.nextWorkId(nick, work_to_get, function(err, next_work_id) {
       if (err) {
@@ -155,7 +209,9 @@ app.post('/getwork', function(req,res){
         process.exit(1);
       }
 
-      var msg = {work:[]};  //XXX
+      // produce work
+      //XXX
+
       log('SENDING %j', msg); //DEBUG
       res.send({m:toClient(msg, client_pubkey)});
     });
@@ -172,7 +228,22 @@ app.on('uncaughtException', function (req, res, route, e) {
 });
 
 
-var port = process.env.PORT || 8000;
-app.listen(port, function() {
-  console.log("Server listening on port %d...", port);
+// load state
+// XXX for now, fake it
+for (var i = 0; i < 13; i++) {
+  active_ufos.push(i);
+
+  r_ufos.push(ufos.get(i));
+  f_ufos.push([]);
+  b1_ufos.push(START_B1);
+}
+nick_list = ['Gnosis'];
+clients.put('Gnosis', {pending_work:[], });
+//XXX end fake
+
+setImmediate(function(){
+  var port = process.env.PORT || 8000;
+  app.listen(port, function() {
+    console.log("Server listening on port %d...", port);
+  });
 });

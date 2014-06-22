@@ -20,7 +20,9 @@ var db = Db(DB_PATH, function(e) {
 
 var START_B1 = 10000;
 var MAX_WORK_TO_GET = 50000;
-var factor_regexp = RegExp('^[0-9]{1,580}$'); // decimal digits in the largest factor of a 3840 bit number
+var MIN_BIT_LENGTH = 3456;      // 3456 == 3840 * 0.90
+var factor_regexp = RegExp('^[0-9]{1,580}$'); // decimal digits in the largest factor of a composite
+                                              // 3840-bit number not greater than its square root
 
 var secret = new Buffer(fs.readFileSync('server.sec', 'utf8'), 'base64');
 
@@ -30,10 +32,8 @@ var toClient = sodium_msg.toClient;
 
 
 /********** state shared by all clients *****************/
-var active_ufos = [];     // array of ufoIndex
-
 // the following are parallel arrays, indexed by ufoIndex
-var r_ufos = [];          // array of reduced UFO candidates (as bigints)
+var r_ufos = [];          // array of reduced UFO candidates (as bigints); null if not active
 var f_ufos = [];          // array of arrays of known factors (as bigints) of UFO candidates
 var b1_ufos = [];         // array of B1 bounds (integers)
 
@@ -46,7 +46,7 @@ var clients = new HashTable();   // maps nick to object; don't take security ris
 //  pending_work: [
 //    {
 //      id: <integer>,
-//      ufoIndex: <integer>,
+//      ufo: <integer>,         // ufoIndex
 //      B1: <integer>,
 //      sigma: <integer>
 //    }, ...
@@ -168,7 +168,7 @@ app.post('/getwork', function(req,res){
     // process results
     var unknown_work_ids = [];
     dreq.results.forEach(function(wr){
-      // TODO bisection search
+      // TODO binary search
       var p_w;
       client_obj.pending_work.some(function(_p_w){
         if (wr.id === _p_w.id) {
@@ -183,16 +183,41 @@ app.post('/getwork', function(req,res){
       // handle ret
       //XXX
 
+      // if UFO candidate is no longer active, just ignore this work
+      var ufoIndex = p_w.ufo;
+      var u = r_ufos[ufoIndex];
+      if (!u) {
+        log('work result for UFO candidate %d that is no longer active', ufoIndex);
+        return;
+      }
+
       // handle found
       if (wr.found) {
-        var found = bigint(wr.found);
-        // TODO if this work ID is in a test work pair, take care of that
-        if (found.le(1) || ) {
-          console.error('Invalid factor'); //DEBUG need real logging here
+        if (!factor_regexp.test(wr.found)) {
+          log('misbehaving: found for r_ufos[%d] fails regexp', ufoIndex);
           return;
         }
-        //XXX
+        var found = bigint(wr.found);
+        if (found.le(1) || found.ge(u)) {
+          log('misbehaving: found for r_ufos[%d] not in range (1, u)', ufoIndex);
+          return;
+        }
+        var d = u.div(found);
+        if (!d.mul(found).eq(u)) {
+          log('probably misbehaving: found not a factor of r_ufos[%d]', ufoIndex);
+          return;
+        }
+        if (d.lt(found)) {
+          log('found factor but misbehaving (gave larger factor!); continuing anyway');
+          var tmp = d;
+          d = found;
+          found = tmp;
+        }
+
+        // update the state for this UFO candidate with the found factor
+        foundFactor(ufoIndex, found);
       }
+      // TODO if this work ID is in a test work pair, take care of that
     });
 
     // process pending
@@ -215,8 +240,39 @@ app.post('/getwork', function(req,res){
       log('SENDING %j', msg); //DEBUG
       res.send({m:toClient(msg, client_pubkey)});
     });
-  });
-});
+  });     // getPublicKey
+
+  // updates r_ufos, f_ufos; may disable a UFO and activate the next
+  // DO NOT CALL IF found IS NOT A FACTOR!
+  function foundFactor(ufoIndex, found) {
+    var u = r_ufos[ufoIndex];
+    assert(u);
+
+    var f = f_ufos[ufoIndex];
+    f.push(found);
+    u = u.div(found);
+    r_ufos[ufoIndex] = u;
+
+    if (u.probPrime()) {
+      log('r_ufos[%d] is now prime! INACTIVATING', ufoIndex);
+      replace();
+    } else if (u.bitLength() < MIN_BIT_LENGTH) {
+      log('r_ufos[%d] is now too small! INACTIVATING', ufoIndex);
+      replace();
+    }
+
+    // inactivate this UFO candidate, and activate the next
+    function replace() {
+      r_ufos[ufoIndex] = null;
+      var ufoIndex = r_ufos.length;
+      r_ufos.push(ufos.get(ufoIndex));
+      f_ufos.push([]);
+      b1_ufos.push(START_B1);
+      assert(r_ufos.length === f_ufos.length);
+      assert(r_ufos.length === b1_ufos.length);
+    }
+  }       // foundFactor
+});       // getwork
 
 
 //DEBUG
@@ -231,8 +287,6 @@ app.on('uncaughtException', function (req, res, route, e) {
 // load state
 // XXX for now, fake it
 for (var i = 0; i < 13; i++) {
-  active_ufos.push(i);
-
   r_ufos.push(ufos.get(i));
   f_ufos.push([]);
   b1_ufos.push(START_B1);

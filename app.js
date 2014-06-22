@@ -2,14 +2,17 @@
 
 var fs = require('fs');
 var assert = require('assert');
+var crypto = require('crypto');
 var format = require('util').format;
 var _ = require('underscore');
 var sodium = require('sodium');
 var bigint = require('bigint');
 var restify = require('restify');
+var bops = require('bops');
 var HashTable = require('hashtable');
 
 var ufos = require('./ufos');
+var nextB1 = require('./b1_ainc');  // given the last B1 tried, return the next B1
 
 var DB_PATH = 'state.leveldb';
 var Db = require('./db');
@@ -29,6 +32,11 @@ var secret = new Buffer(fs.readFileSync('server.sec', 'utf8'), 'base64');
 var sodium_msg = require('./sodium_msg')(secret);
 var fromClient = sodium_msg.fromClient;
 var toClient = sodium_msg.toClient;
+
+function randomSigma() {
+  var b = crypto.randomBytes(4);
+  return bops.readUInt32LE(b, 0);
+}
 
 
 /********** state shared by all clients *****************/
@@ -247,6 +255,9 @@ app.post('/getwork', function(req,res){
         off = facs.length;
       }
       var facs_to_send = [];
+      for (var i = off; i < facs.length; i++) {
+        facs_to_send.push(facs[i].toString());
+      }
       return {off: off, facs: facs_to_send};
     });
 

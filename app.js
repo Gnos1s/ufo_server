@@ -140,6 +140,9 @@ function validate(dreq) {
 }
 
 
+// TODO:
+//  rate limiting! 3 per sec sounds good
+//  limit max request size to 128KB
 app.post('/getwork', function(req,res){
   var log = function(/*arguments*/) {
     var s = format.apply(null, arguments);
@@ -198,6 +201,10 @@ app.post('/getwork', function(req,res){
         // TODO: save found factors in case a user is banned and a rollback happens
         return;
       }
+
+      // update B1 for this UFO
+      b1_ufos[ufoIndex] = nextB1(b1_ufos[ufoIndex]);
+      log('r_ufos[%d]: increasing B1 bound to %d', ufoIndex, ufoIndex);
 
       // save B1 to last_b1 for this UFO candidate, if larger than previous
       var l = last_b1[ufoIndex];
@@ -325,8 +332,43 @@ app.post('/getwork', function(req,res){
   }       // foundFactor
 
 
+  // may create new test work
+  // returns an array of {id, sigma, B1, ufo} to send to client
   function nextWork(nick, next_work_id, work_to_get) {
-    //XXX
+    var work = [];
+
+    // produce min_ufo_indices; TODO: maintain a sorted cache instead?
+    var min_B1 = Infinity;
+    var min_ufo_indices = null;
+    r_ufos.forEach(function(u, ufoIndex) {
+      if (!u) return;   // inactive
+      var cur_B1 = b1_ufos[ufoIndex];
+      if (cur_B1 < min_B1) {
+        min_B1 = cur_B1;
+        min_ufo_indices = [ufoIndex];
+      } else if (cur_B1 === min_B1) {
+        min_ufo_indices.push(ufoIndex);
+      }
+    });
+    assert(_.isArray(min_ufo_indices) && min_ufo_indices.length);
+
+    // sample from min_ufo_indices
+    // TODO: roll my own using crypto.randomBytes
+    var indices = _.sample(min_ufo_indices, work_to_get);
+    assert(indices.length === work_to_get);
+
+    for (var i = 0; id < work_to_get; i++) {
+      var id = next_work_id + i;
+      var w = {id:id};
+      // TODO: test work
+      w.sigma = randomSigma();
+      var ufoIndex = indices[i];
+      assert(_.isNumber(ufoIndex));
+      w.ufo = ufoIndex;
+      w.B1 = b1_ufos[ufoIndex];
+      work.push(w);
+    }
+    return work;
   }       // nextWork
 });       // getwork
 

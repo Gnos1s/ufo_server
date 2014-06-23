@@ -9,7 +9,7 @@ var sodium = require('sodium');
 var bigint = require('bigint');
 var restify = require('restify');
 var bops = require('bops');
-var HashTable = require('hashtable');
+var dict = require('dict');
 
 var ufos = require('./ufos');
 var nextB1 = require('./b1_ainc');  // given the last B1 tried, return the next B1
@@ -21,7 +21,7 @@ var db = Db(DB_PATH, function(e) {
   process.exit(1);
 });
 
-var START_B1 = 10000;
+var START_B1 = 100000;
 var MAX_WORK_TO_GET = 50000;
 var MIN_BIT_LENGTH = 3456;      // 3456 == 3840 * 0.90
 var factor_regexp = RegExp('^[0-9]{1,580}$'); // decimal digits in the largest factor of a composite
@@ -39,16 +39,15 @@ function randomSigma() {
 }
 
 
-/********** state shared by all clients *****************/
+/********** state *****************/
 // the following are parallel arrays, indexed by ufoIndex
 var r_ufos = [];          // array of reduced UFO candidates (as bigints); null if not active
 var f_ufos = [];          // array of arrays of known factors (as bigints) of UFO candidates
 var b1_ufos = [];         // array of B1 bounds (integers)
+var last_b1 = [];         // array of dict mapping nick to last B1 finished by that nick; storing
+                          //   this info enables us to rollback if a user sends fake results
 
-
-/********** state per client *****************/
-var nick_list = [];              // need this because we cannot get all keys from HashTable objects
-var clients = new HashTable();   // maps nick to object; don't take security risk of using JS objects
+var clients = dict();     // maps nick to object; don't take security risk of using JS objects
 // each object:
 // {
 //  pending_work: [
@@ -196,7 +195,20 @@ app.post('/getwork', function(req,res){
       var u = r_ufos[ufoIndex];
       if (!u) {
         log('work result for UFO candidate %d that is no longer active', ufoIndex);
+        // TODO: save found factors in case a user is banned and a rollback happens
         return;
+      }
+
+      // save B1 to last_b1 for this UFO candidate, if larger than previous
+      var l = last_b1[ufoIndex];
+      assert(l);
+      if (l.has(nick)) {
+        var old_B1 = l.get(nick);
+        if (p_w.B1 > old_B1) {
+          l.set(nick, p_w.B1);
+        }
+      } else {
+        l.set(nick, p_w.B1);
       }
 
       // handle found
@@ -223,10 +235,11 @@ app.post('/getwork', function(req,res){
         }
 
         // update the state for this UFO candidate with the found factor
-        foundFactor(ufoIndex, found);
+        foundFactor(nick, ufoIndex, found);
       }
       // TODO if this work ID is in a test work pair, take care of that
-    });
+    });   // forEach dreq.results
+    if (unknown_work_ids.length) log('unknown_work_ids: %j', unknown_work_ids);
 
     // process pending
     var new_pending = [];
@@ -270,16 +283,16 @@ app.post('/getwork', function(req,res){
       }
 
       // produce work
-      //XXX
+      msg.work = nextWork(nick, next_work_id, work_to_get);
 
       log('SENDING %j', msg); //DEBUG
       res.send({m:toClient(msg, client_pubkey)});
     });
   });     // getPublicKey
 
-  // updates r_ufos, f_ufos; may disable a UFO and activate the next
+  // updates r_ufos, f_ufos, b1_ufos, last_b1; may disable a UFO and activate the next
   // DO NOT CALL IF found IS NOT A FACTOR!
-  function foundFactor(ufoIndex, found) {
+  function foundFactor(nick, ufoIndex, found) {
     var u = r_ufos[ufoIndex];
     assert(u);
 
@@ -304,10 +317,17 @@ app.post('/getwork', function(req,res){
       r_ufos.push(ufos.get(ufoIndex));
       f_ufos.push([]);
       b1_ufos.push(START_B1);
+      last_b1.push(dict());
       assert(r_ufos.length === f_ufos.length);
       assert(r_ufos.length === b1_ufos.length);
+      assert(r_ufos.length === last_b1.length);
     }
   }       // foundFactor
+
+
+  function nextWork(nick, next_work_id, work_to_get) {
+    //XXX
+  }       // nextWork
 });       // getwork
 
 
@@ -326,9 +346,9 @@ for (var i = 0; i < 13; i++) {
   r_ufos.push(ufos.get(i));
   f_ufos.push([]);
   b1_ufos.push(START_B1);
+  last_b1.push(dict());
 }
-nick_list = ['Gnosis'];
-clients.put('Gnosis', {pending_work:[], });
+clients.set('Gnosis', {pending_work:[], });
 //XXX end fake
 
 setImmediate(function(){

@@ -267,12 +267,15 @@ app.post('/getwork', function(req,res){
     client_obj.pending_work = new_pending;
 
     // process f, produce f
-    msg.f = f_ufos.map(function(facs, ufoIndex) {
+    msg.f = [];
+    f_ufos.forEach(function(facs, ufoIndex) {
       if (ufoIndex >= dreq.f.length) {
-        return {
+        msg.f.push({
+          ufo: ufoIndex,
           off: 0,
           facs: facs.map(function(fac){ return fac.toString(); }),
-        };
+        });
+        return;
       }
       var off = dreq.f[ufoIndex];
       if (off > facs.length) {
@@ -285,7 +288,9 @@ app.post('/getwork', function(req,res){
       for (var i = off; i < facs.length; i++) {
         facs_to_send.push(facs[i].toString());
       }
-      return {off: off, facs: facs_to_send};
+      if (facs_to_send.length) {
+        msg.f.push({ufo: ufoIndex, off: off, facs: facs_to_send});
+      }
     });
 
     var work_to_get = dreq.get;

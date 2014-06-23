@@ -173,7 +173,11 @@ app.post('/getwork', function(req,res){
     var msg = {};
 
     var client_obj = clients.get(nick);
-    assert(client_obj);
+    if (!client_obj) {
+      // TODO: load pending work from DB?
+      client_obj = {pending_work: []};
+      clients.set(nick, client_obj);
+    }
 
     // process results
     var unknown_work_ids = [];
@@ -387,7 +391,6 @@ for (var i = 0; i < 13; i++) {
   b1_ufos.push(START_B1);
   last_b1.push(dict());
 }
-clients.set('Gnosis', {pending_work:[], });
 //XXX end fake
 
 setImmediate(function(){

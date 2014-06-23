@@ -101,7 +101,7 @@ function validate(dreq) {
       return;
     }
     if (!r.found) r.found = null;
-    if (!inRange(r.ret, 0, 255)) {
+    if (!(inRange(r.ret, 0, 255) || (_.isString(r.ret) && r.ret.length < 20))) {
       fail += format('.results[%s].ret is invalid: %j; ', i, r.ret);
       return;
     }
@@ -204,7 +204,7 @@ app.post('/getwork', function(req,res){
 
       // update B1 for this UFO
       b1_ufos[ufoIndex] = nextB1(b1_ufos[ufoIndex]);
-      log('r_ufos[%d]: increasing B1 bound to %d', ufoIndex, ufoIndex);
+      log('r_ufos[%d]: increasing B1 bound to %d', ufoIndex, b1_ufos[ufoIndex]);
 
       // save B1 to last_b1 for this UFO candidate, if larger than previous
       var l = last_b1[ufoIndex];
@@ -304,8 +304,8 @@ app.post('/getwork', function(req,res){
     assert(u);
 
     var f = f_ufos[ufoIndex];
-    log('r_ufos[%d]: FOUND %s', ufoIndex, f.toString());
     f.push(found);
+    log('FOUND %s; f_ufos[%d] is %j', found.toString(), ufoIndex, f.map(function(x){return x.toString()}));
     u = u.div(found);
     r_ufos[ufoIndex] = u;
 
@@ -352,21 +352,18 @@ app.post('/getwork', function(req,res){
     });
     assert(_.isArray(min_ufo_indices) && min_ufo_indices.length);
 
-    // sample from min_ufo_indices
-    // TODO: roll my own using crypto.randomBytes
-    var indices = _.sample(min_ufo_indices, work_to_get);
-    assert(indices.length === work_to_get);
-
+    var client_obj = clients.get(nick);
     for (var i = 0; i < work_to_get; i++) {
       var id = next_work_id + i;
       var w = {id:id};
       // TODO: test work
       w.sigma = randomSigma();
-      var ufoIndex = indices[i];
+      var ufoIndex = _.sample(min_ufo_indices, 1)[0]; // TODO: roll my own using crypto.randomBytes
       assert(_.isNumber(ufoIndex));
       w.ufo = ufoIndex;
       w.B1 = b1_ufos[ufoIndex];
       work.push(w);
+      client_obj.pending_work.push(w);
     }
     return work;
   }       // nextWork

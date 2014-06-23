@@ -195,7 +195,10 @@ app.post('/getwork', function(req,res){
         return;
       }
       // handle ret
-      //XXX
+      if (!_.contains([0, 2, 6, 8, 10, 14, 'SIGINT','SIGTERM'], wr.ret)) {
+        // if not a "normal" code/signal, print
+        log('unusual work result .ret: %j for ufoIndex %d, B1 %d', wr.ret, p_w.ufo, p_w.B1);
+      }
 
       // if UFO candidate is no longer active, just ignore this work
       var ufoIndex = p_w.ufo;

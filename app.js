@@ -357,7 +357,7 @@ app.post('/getwork', function(req,res){
     var indices = _.sample(min_ufo_indices, work_to_get);
     assert(indices.length === work_to_get);
 
-    for (var i = 0; id < work_to_get; i++) {
+    for (var i = 0; i < work_to_get; i++) {
       var id = next_work_id + i;
       var w = {id:id};
       // TODO: test work

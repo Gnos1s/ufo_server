@@ -24,15 +24,29 @@ function Db(dbpath_or_dbobj, cb) {
   // cb receives (err, pubkey_buf|null)
   // if err.type is 'NotFoundError', then there is no public key for this nick
   function getPublicKey(nick, cb) {
-    if (nick.indexOf('::') !== -1) return cb(new Error('nick contains "::"'));
+    if (~nick.indexOf('::')) return cb(new TypeError('nick contains "::"'));
 
     var db_key = format('nick::%s::pubkey', nick);
     self._db.get(db_key, function(err, pubkey_b64) {
       if (err) return cb(err);
       var pubkey_buf = new Buffer(pubkey_b64, 'base64');
-      assert(pubkey_buf.length === 32); // only valid keys allowed in DB
+      if (pubkey_buf.length !== 32) return cb(new TypeError('not a valid pubkey'));
       return cb(null, pubkey_buf);
     });
+  }
+
+
+  // set pubkey for this nick
+  // cb receives (err)
+  function setPublicKey(nick, pubkey, cb) {
+    if (~nick.indexOf('::')) return cb(new TypeError('nick contains "::"'));
+
+    // verify that it is valid
+    var pubkey_buf = new Buffer(pubkey, 'base64');
+    if (pubkey_buf.length !== 32) return cb(new TypeError('not a valid pubkey'));
+
+    var db_key = format('nick::%s::pubkey', nick);
+    self._db.put(db_key, pubkey, cb);
   }
 
 
@@ -41,6 +55,8 @@ function Db(dbpath_or_dbobj, cb) {
   // `count` specifies number of work IDs to allocate (default is 1)
   // callback receives (err, next_work_id)
   function nextWorkId(nick, count_or_cb, vararg_cb) {
+    if (~nick.indexOf('::')) return cb(new TypeError('nick contains "::"'));
+
     var count = (arguments.length > 2) ? count_or_cb : 1;
     var cb = arguments[arguments.length-1];
     assert(_.isNumber(count));
@@ -63,6 +79,7 @@ function Db(dbpath_or_dbobj, cb) {
 
 
   self.getPublicKey = getPublicKey;
+  self.setPublicKey = setPublicKey;
   self.nextWorkId = nextWorkId;
   return self;
 }

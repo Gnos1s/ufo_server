@@ -294,6 +294,10 @@ app.post('/getwork', function(req,res){
     });
 
     var work_to_get = dreq.get;
+    if (work_to_get == 0) {
+      msg.work = [];
+      return sendResponseMessage(msg);
+    }
     db.nextWorkId(nick, work_to_get, function(err, next_work_id) {
       if (err) {
         log('DB error nextWorkId! %s', err.message || err);
@@ -304,9 +308,13 @@ app.post('/getwork', function(req,res){
       // produce work
       msg.work = nextWork(nick, next_work_id, work_to_get);
 
+      return sendResponseMessage(msg);
+    });
+
+    function sendResponseMessage(msg) {
       log('SENDING %j', msg); //DEBUG
       res.send({m:toClient(msg, client_pubkey)});
-    });
+    }
   });     // getPublicKey
 
   // updates r_ufos, f_ufos, b1_ufos, last_b1; may disable a UFO and activate the next

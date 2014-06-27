@@ -13,6 +13,7 @@ var dict = require('dict');
 
 var ufos = require('./ufos');
 var nextB1 = require('./b1_ainc');  // given the last B1 tried, return the next B1
+var randInt = require('./util').randInt;
 
 var DB_PATH = 'state.leveldb';
 var Db = require('./db');
@@ -381,7 +382,8 @@ app.post('/getwork', function(req,res){
       var ufoIndex = _.sample(min_ufo_indices, 1)[0]; // TODO: roll my own using crypto.randomBytes
       assert(_.isNumber(ufoIndex));
       w.ufo = ufoIndex;
-      w.B1 = b1_ufos[ufoIndex];
+      var cur_B1 = b1_ufos[ufoIndex];
+      w.B1 = randInt(cur_B1, Math.floor(nextB1(cur_B1)/2)-1);  // randomization makes clients less bursty
       work.push(w);
       client_obj.pending_work.push(w);
     }

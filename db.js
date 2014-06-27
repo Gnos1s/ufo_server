@@ -78,8 +78,28 @@ function Db(dbpath_or_dbobj, cb) {
   }
 
 
+  // get array of all {key,value} pairs where the key has the given prefix.
+  // callback receives (err, items).
+  function getItemsByPrefix(prefix, cb) {
+    assert(_.isString(prefix));
+    var s = db.createReadStream({start:prefix});
+    var items = [];
+    s.on('data',function(item){
+      if (item.key.substr(0,prefix.length)!==prefix){
+        s.destroy();
+        return;
+      }
+      items.push(item);
+    });
+    s.once('close',function(){
+      cb(null, items);
+    });
+  }
+
+
   self.getPublicKey = getPublicKey;
   self.setPublicKey = setPublicKey;
   self.nextWorkId = nextWorkId;
+  self.getItemsByPrefix = getItemsByPrefix;
   return self;
 }

@@ -22,12 +22,12 @@ var bits = function(n){return Math.ceil(Math.log(n+1)/Math.log(2))};
 
 // TODO: cleanup this horrible, inefficient code
 exports.randInt = function randInt(low, high){
-  assert(low < 1e15)
-  assert(high < 1e15)
-  var range = high - low
-  assert(low > -1e15)
-  assert(high > -1e15)
-  assert(range >= 0)
+  assert(low < 1e15);
+  assert(high < 1e15);
+  var range = high - low;
+  assert(low > -1e15);
+  assert(high > -1e15);
+  assert(range >= 0);
   if (range === 0) return low;
   var q = range;
   var bytes = 1;

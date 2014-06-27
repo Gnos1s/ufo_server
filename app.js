@@ -379,11 +379,12 @@ app.post('/getwork', function(req,res){
       var w = {id:id};
       // TODO: test work
       w.sigma = randomSigma();
-      var ufoIndex = _.sample(min_ufo_indices, 1)[0]; // TODO: roll my own using crypto.randomBytes
+      var ufoIndex = min_ufo_indices[randInt(0, min_ufo_indices.length-1)];
       assert(_.isNumber(ufoIndex));
       w.ufo = ufoIndex;
       var cur_B1 = b1_ufos[ufoIndex];
-      w.B1 = randInt(cur_B1, Math.floor(nextB1(cur_B1)/2)-1);  // randomization makes clients less bursty
+      var max_B1 = cur_B1 + Math.floor(nextB1(cur_B1)*0.2)-1;
+      w.B1 = randInt(cur_B1, max_B1);  // randomization makes clients less bursty
       work.push(w);
       client_obj.pending_work.push(w);
     }

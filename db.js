@@ -180,7 +180,7 @@ function Db(dbpath_or_dbobj, cb) {
 
       if (updated) {
         // fire-and-forget save to DB
-        setClientObj(nick, JSON.stringify(clients.get(nick)), function(err){
+        setClientObj(nick, clients.get(nick), function(err){
           if (err) {
             console.log('ERROR while saving client_obj of "%s": %s', nick, err.message||err);
           }

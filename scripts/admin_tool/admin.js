@@ -28,8 +28,14 @@ var nick = config.nick,
 
 function main() {
   var req = {
-    action: 'hotfix',      //XXX DEBUG
-    script: '"use strict"\n\nconsole.log("Inside eval! :-)")\nsendRes({from_eval:true});'
+    //action: 'hotfix',      //XXX DEBUG
+    //script: '"use strict"\n\nconsole.log("Inside eval! :-)")\nsendRes({from_eval:true});'
+
+    //action: 'set',           //XXX DEBUG
+    //nick: 'okaycool',
+    //pubkey: 'AAAAAAAAAABAYKECAAAAAF8wMz0BAAAA0GefAgAAAAA=',
+
+    action: 'dump',            // XXX DEBUG
   };
   function attemptLoop() {
     var enc_req = {nick:nick, m:toServer(req)};

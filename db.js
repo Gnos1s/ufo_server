@@ -45,7 +45,9 @@ function Db(dbpath_or_dbobj, cb) {
   // set pubkey for this nick
   // cb receives (err)
   function setPublicKey(nick, pubkey, cb) {
+    if (!_.isString(nick)) return cb(new TypeError('nick is not a string'));
     if (~nick.indexOf('::')) return cb(new TypeError('nick contains "::"'));
+    if (!_.isString(pubkey)) return cb(new TypeError('pubkey must be a base64 string'));
 
     // verify that it is valid
     var pubkey_buf = new Buffer(pubkey, 'base64');
@@ -61,6 +63,7 @@ function Db(dbpath_or_dbobj, cb) {
   // `count` specifies number of work IDs to allocate (default is 1)
   // callback receives (err, next_work_id)
   function nextWorkId(nick, count_or_cb, vararg_cb) {
+    if (!_.isString(nick)) return cb(new TypeError('nick is not a string'));
     if (~nick.indexOf('::')) return cb(new TypeError('nick contains "::"'));
 
     var count = (arguments.length > 2) ? count_or_cb : 1;

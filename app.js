@@ -5,6 +5,7 @@ var assert = require('assert');
 var crypto = require('crypto');
 var format = require('util').format;
 var _ = require('underscore');
+var async = require('async');
 var sodium = require('sodium');
 var bigint = require('bigint');
 var restify = require('restify');
@@ -46,7 +47,7 @@ var f_ufos = [];          // array of arrays of known factors (as bigints) of UF
 var b1_ufos = [];         // array of B1 bounds (integers)
 
 var clients = dict();     // maps nick to object; don't take security risk of using JS objects
-// each object:
+// each object ("client_obj"):
 // {
 //  status: null|'banned'|'admin',
 //  pending_work: [
@@ -139,6 +140,47 @@ function validate(dreq) {
 }
 
 
+// ensures that nick is present and has the given public key (buffer or base64 string)
+function ensureNick(nick, pubkey, cb) {
+  if (!_.isString(nick) || (~nick.indexOf('::'))) return cb(new TypeError('invalid nick'));
+
+  if (_.isString(pubkey)) pubkey = new Buffer(pubkey, 'base64');
+
+  if (!(pubkey instanceof Buffer)) return cb(new TypeError('pubkey not a buffer'));
+  if (pubkey.length !== 32) return cb(new TypeError('pubkey not 32 bytes'));
+
+  // back to a string
+  pubkey = pubkey.toString('base64');
+
+  async.waterfall([
+    function savePublicKey(next) {
+      db.setPublicKey(nick, pubkey, function(err) {
+        if (err && err.message && _.isString(err.message)) {
+          err.message = 'setPublicKey: ' + err.message;
+        }
+        return next(err);
+      });
+    },
+    function ensureClientObj(next) {
+      var client_obj = clients.get(nick);
+      if (!client_obj) {
+        client_obj = {status: null, pending_work: []};  // default
+        clients.set(nick, client_obj);
+        return db.setClientObj(nick, client_obj, function(err){
+          if (err && err.message && _.isString(err.message)) {
+            err.message = 'ensureClientObj: ' + err.message;
+          }
+          return next(err);
+        });
+      }
+      return next(null);
+    }
+  ], function(err) {
+    return cb(err);
+  });
+}
+
+
 // TODO:
 //  rate limiting! 50/sec/IP sounds good
 //  limit max request size to 128KB
@@ -150,6 +192,13 @@ app.post('/getwork', function(req,res){
   if (!req.is('application/json')) return res.send(400);
   if (!_.isObject(req.body)) return res.send(400);
   var nick = req.body.nick;
+
+  var client_obj = clients.get(nick);
+  if (!client_obj || client_obj.status === 'banned') {
+    log(client_obj ? 'was banned' : 'no client_obj for nick');
+    return res.send(400);
+  }
+
   db.getPublicKey(nick, function(err, client_pubkey) {
     if (err) {
       log('error getting pubkey for nick "%s": %s', nick, err.message || err);
@@ -170,9 +219,6 @@ app.post('/getwork', function(req,res){
     }
 
     var msg = {};
-
-    var client_obj = clients.get(nick);
-    assert(client_obj);
 
     // process results
     var unknown_work_ids = [];
@@ -407,18 +453,46 @@ app.post('/admin', function(req, res) {
     var msg = {};
 
     // LOGIC
-    if (dreq.action === 'hello') { //XXX DEBUG
-      console.log('ADMIN: hello');
+    if (dreq.action === 'dump') {
+      // dump the database
+      db.getItemsByPrefix('', function(err, items) {
+        var msg = {};
+        if (err) {
+          msg.err = err.message || (err.toString && err.toString()) || '<unknown err>';
+          return sendRes(msg);
+        }
+
+        // make sure it can be stringified
+        try {
+          var items_str = JSON.stringify(items);
+        } catch (e) {
+          return sendRes({err: 'could not stringify items'});
+        }
+
+        msg.err = null;
+        msg.items = items;
+        return sendRes(msg);
+      });
+
+    } else if (dreq.action === 'set') {
+      // set a nick's pubkey
+      ensureNick(dreq.nick, dreq.pubkey, function(err) {
+        if (err) {
+          err = err.message || (err.toString && err.toString()) || '<unknown err>';
+        }
+        return sendRes({err: err});
+      });
+
     } else if (dreq.action === 'hotfix') {
+      // evaluate a hotfix script (template: '"use strict";\n\n(something)\nsendRes({...});\n')
       return eval(dreq.script);   // responsible for calling sendRes
+
     } else {
-      //XXX
+      return sendRes({err: format('unknown action "%s"', dreq.action)});
     }
 
-    sendRes(msg);
-
     function sendRes(msg) {
-      log('SENDING %j', msg); //DEBUG
+      log('SENDING_TO_ADMIN %j', msg); //DEBUG
       res.send({m:toClient(msg, client_pubkey)});
     }
   });       // getPublicKey

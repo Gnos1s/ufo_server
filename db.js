@@ -221,7 +221,8 @@ function Db(dbpath_or_dbobj, cb) {
   // callback receives (err)
   function setClientObj(nick, client_obj, cb) {
     var s = JSON.stringify(client_obj);
-    self._db.put(nick, s, function(err) {
+    var k = format('nick::%s::client_obj', nick);
+    self._db.put(k, s, function(err) {
       cb(err);
     });
   }

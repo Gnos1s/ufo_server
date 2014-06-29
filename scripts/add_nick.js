@@ -1,6 +1,7 @@
 'use strict';
 
 var yaml = require('js-yaml');
+var fs = require('fs');
 
 var DB_PATH = 'state.leveldb';
 var Db = require('../db');

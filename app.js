@@ -376,6 +376,48 @@ app.post('/getwork', function(req,res){
 });       // getwork
 
 
+app.post('/admin', function(req, res) {
+  var log = function(/*arguments*/) {
+    var s = format.apply(null, arguments);
+    console.log('%s %s: %s', (new Date).toISOString(), req.socket.remoteAddress, s);
+  }
+  if (!req.is('application/json')) return res.send(400);
+  if (!_.isObject(req.body)) return res.send(400);
+  if (!_.isString(req.body.nick)) return res.send(400);
+  var nick = req.body.nick;
+
+  // check that this is an admin
+  var client_obj = clients.get(nick);
+  if (!client_obj || client_obj.status !== 'admin') res.send(400);
+
+  db.getPublicKey(nick, function(err, client_pubkey) {
+    if (err) {
+      log('error getting pubkey for nick "%s": %s', nick, err.message || err);
+      return res.send(400);
+    }
+    var dreq = fromClient(req.body.m, client_pubkey);
+
+    log('FROM nick "%s": /getwork request DECRYPTED %j', nick, dreq); //DEBUG
+
+    if (dreq === undefined) {
+      log('Could not decrypt');
+      return res.send(400);
+    }
+
+    var msg = {};
+
+    // LOGIC
+    if (dreq.action === 'hello') { //XXX DEBUG
+      console.log('ADMIN: hello');
+    } else {
+      //XXX
+    }
+
+    res.send({m:toClient(msg, client_pubkey)});
+  });       // getPublicKey
+});         // POST /admin
+
+
 //DEBUG
 app.on('uncaughtException', function (req, res, route, e) {
   console.log('%s %s: ERR: %s', (new Date).toISOString(),

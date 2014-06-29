@@ -10,7 +10,9 @@
     "bigint": "^0.4.2",
     "bops": "^0.1.1",
     "dict": "^1.4.0",
+    "js-yaml": "^3.0.2",
     "level": "^0.18.0",
+    "request": "^2.36.0",
     "restify": "^2.8.1",
     "sodium": "^1.0.11",
     "underscore": "^1.6.0"

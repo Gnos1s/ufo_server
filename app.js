@@ -140,7 +140,7 @@ function validate(dreq) {
 
 
 // TODO:
-//  rate limiting! 3 per sec sounds good
+//  rate limiting! 50/sec/IP sounds good
 //  limit max request size to 128KB
 app.post('/getwork', function(req,res){
   var log = function(/*arguments*/) {
@@ -366,7 +366,7 @@ app.post('/getwork', function(req,res){
       assert(_.isNumber(ufoIndex));
       w.ufo = ufoIndex;
       var cur_B1 = b1_ufos[ufoIndex];
-      var max_B1 = cur_B1 + Math.floor(nextB1(cur_B1)*0.2)-1;
+      var max_B1 = cur_B1 + Math.max(0, Math.floor(nextB1(cur_B1)*0.2)-1);
       w.B1 = randInt(cur_B1, max_B1);  // randomization makes clients less bursty
       work.push(w);
       client_obj.pending_work.push(w);

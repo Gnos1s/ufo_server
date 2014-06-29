@@ -532,6 +532,13 @@ db.loadState(function(err, state) {
   b1_ufos = state.b1_ufos;
   clients = state.clients;
 
+  setInterval(function(){
+    db.saveAllUFOs(r_ufos, f_ufos, b1_ufos, function(err) {
+      if (err) throw err;
+      console.log('DB_SAVE');
+    });
+  }, 30000);
+
   var port = process.env.PORT || 8000;
   app.listen(port, function() {
     console.log("Server listening on port %d...", port);

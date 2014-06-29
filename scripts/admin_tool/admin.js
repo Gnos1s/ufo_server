@@ -36,6 +36,9 @@ function main() {
     //pubkey: 'AAAAAAAAAABAYKECAAAAAF8wMz0BAAAA0GefAgAAAAA=',
 
     action: 'dump',            // XXX DEBUG
+
+    //action: 'ban',            // XXX DEBUG
+    //nick: 'okaycool',
   };
   function attemptLoop() {
     var enc_req = {nick:nick, m:toServer(req)};

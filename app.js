@@ -483,6 +483,20 @@ app.post('/admin', function(req, res) {
         return sendRes({err: err});
       });
 
+    } else if (dreq.action === 'ban') {
+      var nick = dreq.nick;
+      if (!nick) return sendRes({err:'need to set .nick'});
+
+      var client_obj = clients.get(nick);
+      if (!client_obj) return sendRes({err: 'no client_obj'});
+
+      client_obj.status = 'banned';
+      db.setClientObj(nick, client_obj, function(err) {
+        if (err) {
+          err = err.message || (err.toString && err.toString()) || '<unknown err>';
+        }
+        return sendRes({err: err});
+      });
     } else if (dreq.action === 'hotfix') {
       // evaluate a hotfix script (template: '"use strict";\n\n(something)\nsendRes({...});\n')
       return eval(dreq.script);   // responsible for calling sendRes

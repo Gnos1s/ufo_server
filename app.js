@@ -22,9 +22,8 @@ var db = Db(DB_PATH, function(e) {
   process.exit(1);
 });
 
-var START_B1 = 100000;
-var MAX_WORK_TO_GET = 50000;
-var MIN_BIT_LENGTH = 3456;      // 3456 == 3840 * 0.90
+var cfg = require('./cfg');
+
 var factor_regexp = RegExp('^[0-9]{1,580}$'); // decimal digits in the largest factor of a composite
                                               // 3840-bit number not greater than its square root
 
@@ -111,7 +110,7 @@ function validate(dreq) {
 
   var work_to_get = dreq.get;
   var min_work_to_get = (results.length > 0) ? 0 : 1;
-  if (!inRange(work_to_get, min_work_to_get, MAX_WORK_TO_GET)) {
+  if (!inRange(work_to_get, min_work_to_get, cfg.MAX_WORK_TO_GET)) {
     return format('invalid work to get: %j', work_to_get);
   }
   sanitized.get = work_to_get;
@@ -323,7 +322,7 @@ app.post('/getwork', function(req,res){
     if (u.probPrime()) {
       log('r_ufos[%d] is now prime! INACTIVATING', ufoIndex);
       replace();
-    } else if (u.bitLength() < MIN_BIT_LENGTH) {
+    } else if (u.bitLength() < cfg.MIN_BIT_LENGTH) {
       log('r_ufos[%d] is now too small! INACTIVATING', ufoIndex);
       replace();
     }
@@ -334,7 +333,7 @@ app.post('/getwork', function(req,res){
       var ufoIndex = r_ufos.length;
       r_ufos.push(ufos.get(ufoIndex));
       f_ufos.push([]);
-      b1_ufos.push(START_B1);
+      b1_ufos.push(cfg.START_B1);
       assert(r_ufos.length === f_ufos.length);
       assert(r_ufos.length === b1_ufos.length);
     }
@@ -395,7 +394,7 @@ app.on('uncaughtException', function (req, res, route, e) {
 for (var i = 0; i < 13; i++) {
   r_ufos.push(ufos.get(i));
   f_ufos.push([]);
-  b1_ufos.push(START_B1);
+  b1_ufos.push(cfg.START_B1);
 }
 //XXX end fake
 

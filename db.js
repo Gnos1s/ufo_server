@@ -109,7 +109,7 @@ function Db(dbpath_or_dbobj, cb) {
     var f_ufos = [];
     var b1_ufos = [];
     var clients = dict();
-    var s = db.createReadStream();
+    var s = self._db.createReadStream();
     s.on('data', function(d) {
       var k = d.key;
       var v = d.value;
@@ -146,7 +146,7 @@ function Db(dbpath_or_dbobj, cb) {
             r_ufos[ufoIndex] = r;
           }
 
-        } else if (leaf === 'last_B1) {
+        } else if (leaf === 'last_B1') {
           b1_ufos[ufoIndex] = parseInt(v, 10);
         } else {
           assert(false, 'unsupported key "%s"', k);
@@ -223,7 +223,7 @@ function Db(dbpath_or_dbobj, cb) {
     var s = JSON.stringify(client_obj);
     self._db.put(nick, s, function(err) {
       cb(err);
-    }
+    });
   }
 
 

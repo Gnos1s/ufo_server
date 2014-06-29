@@ -101,7 +101,11 @@ function Db(dbpath_or_dbobj, cb) {
   // callback receives (err, state), where state
   // is {r_ufos, f_ufos, b1_ufos, last_b1, clients}
   function loadState(cb) {
-    //
+    // TODO: r_ufos, f_ufos, b1_ufos, last_b1
+    var clients = dict();
+    var s = db.createReadStream();
+    s.on('data', /*XXX*/);
+    //XXX
   }
 
 

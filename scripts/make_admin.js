@@ -16,8 +16,12 @@ var db = Db(DB_PATH, function(e) {
 var nick = process.argv[2];
 db.getClientObj(nick, function(err, client_obj) {
   if (err) {
-    console.error('ERROR loading client_obj: %s', err.message || err);
-    return process.exit(1);
+    if (err.message.match('Key not found in database')) {
+      console.error('ERROR loading client_obj: %s', err.message || err);
+      return process.exit(1);
+    }
+
+    client_obj = {status: null, pending_work:[]};  // keep in sync with app.js
   }
 
   client_obj.status = 'admin';

@@ -172,11 +172,7 @@ app.post('/getwork', function(req,res){
     var msg = {};
 
     var client_obj = clients.get(nick);
-    if (!client_obj) {
-      // TODO: load pending work from DB?
-      client_obj = {pending_work: []};
-      clients.set(nick, client_obj);
-    }
+    assert(client_obj);
 
     // process results
     var unknown_work_ids = [];
@@ -389,16 +385,14 @@ app.on('uncaughtException', function (req, res, route, e) {
 });
 
 
-// load state
-// XXX for now, fake it
-for (var i = 0; i < 13; i++) {
-  r_ufos.push(ufos.get(i));
-  f_ufos.push([]);
-  b1_ufos.push(cfg.START_B1);
-}
-//XXX end fake
+db.loadState(function(err, state) {
+  if (err) throw err;
 
-setImmediate(function(){
+  r_ufos  = state.r_ufos;
+  f_ufos  = state.f_ufos;
+  b1_ufos = state.b1_ufos;
+  clients = state.clients;
+
   var port = process.env.PORT || 8000;
   app.listen(port, function() {
     console.log("Server listening on port %d...", port);

@@ -105,7 +105,6 @@ function Db(dbpath_or_dbobj, cb) {
   // callback receives (err, state), where state
   // is {r_ufos, f_ufos, b1_ufos, clients}
   function loadState(cb) {
-    // TODO: r_ufos, f_ufos, b1_ufos
     var r_ufos = [];
     var f_ufos = [];
     var b1_ufos = [];
@@ -135,7 +134,7 @@ function Db(dbpath_or_dbobj, cb) {
           f_ufos[ufoIndex] = facs;
 
           // divide out and possibly inactivate UFO
-          var d = facs.reduce(function(x,y){return x.mul(y)});
+          var d = facs.length ? facs.reduce(function(x,y){return x.mul(y)}) : bigint(1);
           var r = u.div(d);
           assert(r.mul(d).eq(u)); // must be divisible
 

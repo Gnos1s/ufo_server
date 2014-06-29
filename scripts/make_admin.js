@@ -16,7 +16,7 @@ var db = Db(DB_PATH, function(e) {
 var nick = process.argv[2];
 db.getClientObj(nick, function(err, client_obj) {
   if (err) {
-    if (err.message.match('Key not found in database')) {
+    if (!err.message.match('Key not found in database')) {
       console.error('ERROR loading client_obj: %s', err.message || err);
       return process.exit(1);
     }

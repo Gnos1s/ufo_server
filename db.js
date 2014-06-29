@@ -1,6 +1,7 @@
 'use strict';
 
 var _ = require('underscore');
+var async = require('async');
 var assert = require('assert');
 var format = require('util').format;
 var level = require('level');
@@ -155,6 +156,7 @@ function Db(dbpath_or_dbobj, cb) {
         } else {
           assert(false, 'unsupported key "%s"', k);
         }
+        return;
       }
 
       m = k.match(/^nick::([^:]+)::(.*)$/);
@@ -235,6 +237,43 @@ function Db(dbpath_or_dbobj, cb) {
   }
 
 
+  // callback receives (err)
+  function saveUFO(ufoIndex, facs, B1, cb) {
+    if (!_.isNumber(ufoIndex)) return cb(new TypeError('invalid ufoIndex'));
+    if (!_.isArray(facs)) return cb(new TypeError('invalid facs'));
+    if (!_.isNumber(B1)) return cb(new TypeError('invalid B1'));
+
+    facs = facs.map(function(fac){ return fac.toString(); });
+
+    var ufoIndex_str = toFixedWidthString(ufoIndex);
+    var facs_key = format('ufo::%s::facs', ufoIndex_str);
+    var B1_key = format('ufo::%s::last_B1', ufoIndex_str);
+    var ops = [
+      {type:'put', key:facs_key, value:JSON.stringify(facs)},
+      {type:'put', key:B1_key,   value:B1},
+    ];
+    self._db.batch(ops, function(err) {
+      return cb(err);
+    });
+  }
+
+  function saveAllUFOs(r_ufos, f_ufos, b1_ufos, cb) {
+    async.times(r_ufos.length, function(ufoIndex, next) {
+      assert(_.isNumber(ufoIndex));
+      var facs = f_ufos[ufoIndex];
+      var B1 = b1_ufos[ufoIndex];
+      saveUFO(ufoIndex, facs, B1, function(err) {
+        if (err) {
+          err.message = format('ufoIndex %d: %s', ufoIndex, err.message);
+        }
+        return next(err);
+      });
+    }, function(err) {
+      return cb(err);
+    });
+  }
+
+
   self.getPublicKey = getPublicKey;
   self.setPublicKey = setPublicKey;
   self.nextWorkId = nextWorkId;
@@ -242,5 +281,7 @@ function Db(dbpath_or_dbobj, cb) {
   self.loadState = loadState;
   self.getClientObj = getClientObj;
   self.setClientObj = setClientObj;
+  self.saveUFO = saveUFO;
+  self.saveAllUFOs = saveAllUFOs;
   return self;
 }

@@ -497,6 +497,8 @@ app.post('/admin', function(req, res) {
         }
         return sendRes({err: err});
       });
+    } else if (dreq.action === 'rollback') {
+      //XXX
     } else if (dreq.action === 'hotfix') {
       // evaluate a hotfix script (template: '"use strict";\n\n(something)\nsendRes({...});\n')
       return eval(dreq.script);   // responsible for calling sendRes

@@ -5,6 +5,10 @@ var assert = require('assert');
 var format = require('util').format;
 var level = require('level');
 var dict = require('dict');
+var bigint = require('bigint');
+
+var ufos = require('./ufos');
+var cfg = require('./cfg');
 
 var toFixedWidthString = require('./util').toFixedWidthString;
 
@@ -99,14 +103,112 @@ function Db(dbpath_or_dbobj, cb) {
 
 
   // callback receives (err, state), where state
-  // is {r_ufos, f_ufos, b1_ufos, last_b1, clients}
+  // is {r_ufos, f_ufos, b1_ufos, clients}
   function loadState(cb) {
-    // TODO: r_ufos, f_ufos, b1_ufos, last_b1
+    // TODO: r_ufos, f_ufos, b1_ufos
+    var r_ufos = [];
+    var f_ufos = [];
+    var b1_ufos = [];
     var clients = dict();
     var s = db.createReadStream();
-    s.on('data', /*XXX*/);
-    //XXX
-  }
+    s.on('data', function(d) {
+      var k = d.key;
+      var v = d.value;
+      var m = k.match(/^ufo::(\d+)::(.*)$/);
+      if (m) {
+        var ufoIndex = parseInt(m[1], 10);
+        var leaf = m[2];
+        var u = ufos.get(ufoIndex);
+
+        // ensure that ufoIndex is in bounds for all parallel arrays
+        while (r_ufos.length <= ufoIndex) {
+          r_ufos.push(null);
+          f_ufos.push([]);
+          b1_ufos.push(cfg.START_B1);
+        }
+
+        if (leaf === 'facs') {
+          var facs_str = JSON.parse(v);
+          var facs = facs_str.map(function(s) {
+            return bigint(s);
+          });
+          f_ufos[ufoIndex] = facs;
+
+          // divide out and possibly inactivate UFO
+          var d = facs.reduce(function(x,y){return x.mul(y)});
+          var r = u.div(d);
+          assert(r.mul(d).eq(u)); // must be divisible
+
+          if (r.probPrime()) {
+            r_ufos[ufoIndex] = null;  // prime
+          } else if (r.bitLength() < cfg.MIN_BIT_LENGTH) {
+            r_ufos[ufoIndex] = null;  // too small
+          } else {
+            r_ufos[ufoIndex] = r;
+          }
+
+        } else if (leaf === 'last_B1) {
+          b1_ufos[ufoIndex] = parseInt(v, 10);
+        } else {
+          assert(false, 'unsupported key "%s"', k);
+        }
+      }
+
+      m = k.match(/^nick::([^:]+)::(.*)$/);
+      assert(m, 'only "nick" and "ufo" supported');
+      var nick = m[1];
+      leaf = m[2];
+      var updated = false;
+
+      var default_client_obj = {status: null, pending_work: []};   // see app.js
+      if (leaf === 'client_obj') {
+        var client_obj = JSON.parse(v);
+        if (clients.has(nick)) {
+          console.log('WARNING: nick "%s": overwriting old client_obj of %j with %j',
+                      nick,
+                      clients.get(nick),
+                      client_obj);
+        }
+        clients.set(nick, client_obj);
+      } else if (leaf === 'pubkey' || leaf === 'next_id') {
+        if (!clients.has(nick)) {
+          clients.set(nick, default_client_obj);
+          updated = true;
+        }
+      } else {
+        assert(false, 'unsupported key "%s"', k);
+      }
+
+      if (updated) {
+        // fire-and-forget save to DB
+        setClientObj(nick, JSON.stringify(clients.get(nick)), function(err){
+          if (err) {
+            console.log('ERROR while saving client_obj of "%s": %s', nick, err.message||err);
+          }
+        });
+      }
+    });       // on 'data'
+
+    s.once('close', function(){
+
+      // ensure that we have enough active UFOs
+      // TODO: can we have too many?
+      var active_count = r_ufos.filter(function(r){return r !== null}).length;
+      var limit = r_ufos.length + cfg.ACTIVE_UFOS - active_count;
+      for (var i = r_ufos.length; i < limit; i++) {
+        r_ufos.push(ufos.get(i));
+        f_ufos.push([]);
+        b1_ufos.push(cfg.START_B1);
+      }
+
+      cb(null, {
+        clients: clients,
+        r_ufos: r_ufos,
+        f_ufos: f_ufos,
+        b1_ufos: b1_ufos,
+      });
+    });
+  }           // loadState
 
 
   /*
@@ -119,7 +221,10 @@ function Db(dbpath_or_dbobj, cb) {
 
   // callback receives (err)
   function setClientObj(nick, client_obj, cb) {
-    //XXX
+    var s = JSON.stringify(client_obj);
+    self._db.put(nick, s, function(err) {
+      cb(err);
+    }
   }
 
 

@@ -28,7 +28,8 @@ var nick = config.nick,
 
 function main() {
   var req = {
-    action: 'hello',      //XXX DEBUG
+    action: 'hotfix',      //XXX DEBUG
+    script: '"use strict"\n\nconsole.log("Inside eval! :-)")\nsendRes({from_eval:true});'
   };
   function attemptLoop() {
     var enc_req = {nick:nick, m:toServer(req)};
@@ -59,7 +60,6 @@ function main() {
       // at this point, we can trust everything in res as coming from server
 
       console.log(JSON.stringify(res, null, 2));
-      //process.exit(0);
     });
   }
   attemptLoop();

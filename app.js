@@ -409,6 +409,8 @@ app.post('/admin', function(req, res) {
     // LOGIC
     if (dreq.action === 'hello') { //XXX DEBUG
       console.log('ADMIN: hello');
+    } else if (dreq.action === 'hotfix') {
+      return eval(dreq.script);   // responsible for calling sendRes
     } else {
       //XXX
     }

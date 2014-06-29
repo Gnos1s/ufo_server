@@ -282,7 +282,7 @@ app.post('/getwork', function(req,res){
     var work_to_get = dreq.get;
     if (work_to_get == 0) {
       msg.work = [];
-      return sendResponseMessage(msg);
+      return sendRes(msg);
     }
     db.nextWorkId(nick, work_to_get, function(err, next_work_id) {
       if (err) {
@@ -294,10 +294,10 @@ app.post('/getwork', function(req,res){
       // produce work
       msg.work = nextWork(nick, next_work_id, work_to_get);
 
-      return sendResponseMessage(msg);
+      return sendRes(msg);
     });
 
-    function sendResponseMessage(msg) {
+    function sendRes(msg) {
       log('SENDING %j', msg); //DEBUG
       res.send({m:toClient(msg, client_pubkey)});
     }
@@ -397,7 +397,7 @@ app.post('/admin', function(req, res) {
     }
     var dreq = fromClient(req.body.m, client_pubkey);
 
-    log('FROM nick "%s": /getwork request DECRYPTED %j', nick, dreq); //DEBUG
+    log('FROM nick "%s": /admin request DECRYPTED %j', nick, dreq); //DEBUG
 
     if (dreq === undefined) {
       log('Could not decrypt');
@@ -413,7 +413,12 @@ app.post('/admin', function(req, res) {
       //XXX
     }
 
-    res.send({m:toClient(msg, client_pubkey)});
+    sendRes(msg);
+
+    function sendRes(msg) {
+      log('SENDING %j', msg); //DEBUG
+      res.send({m:toClient(msg, client_pubkey)});
+    }
   });       // getPublicKey
 });         // POST /admin
 

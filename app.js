@@ -51,6 +51,7 @@ var last_b1 = [];         // array of dict mapping nick to last B1 finished by t
 var clients = dict();     // maps nick to object; don't take security risk of using JS objects
 // each object:
 // {
+//  status: null|'banned'|'admin',
 //  pending_work: [
 //    {
 //      id: <integer>,

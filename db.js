@@ -4,6 +4,7 @@ var _ = require('underscore');
 var assert = require('assert');
 var format = require('util').format;
 var level = require('level');
+var dict = require('dict');
 
 var toFixedWidthString = require('./util').toFixedWidthString;
 
@@ -97,9 +98,33 @@ function Db(dbpath_or_dbobj, cb) {
   }
 
 
+  // callback receives (err, state), where state
+  // is {r_ufos, f_ufos, b1_ufos, last_b1, clients}
+  function loadState(cb) {
+    //
+  }
+
+
+  /*
+  // callback receives (err, client_obj)
+  function getClientObj(nick, cb) {
+    //XXX
+  }
+  */
+
+
+  // callback receives (err)
+  function setClientObj(nick, client_obj, cb) {
+    //XXX
+  }
+
+
   self.getPublicKey = getPublicKey;
   self.setPublicKey = setPublicKey;
   self.nextWorkId = nextWorkId;
   self.getItemsByPrefix = getItemsByPrefix;
+  self.loadState = loadState;
+  //self.getClientObj = getClientObj;
+  self.setClientObj = setClientObj;
   return self;
 }

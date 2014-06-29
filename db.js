@@ -29,6 +29,7 @@ function Db(dbpath_or_dbobj, cb) {
   // cb receives (err, pubkey_buf|null)
   // if err.type is 'NotFoundError', then there is no public key for this nick
   function getPublicKey(nick, cb) {
+    if (!_.isString(nick)) return cb(new TypeError('nick is not a string'));
     if (~nick.indexOf('::')) return cb(new TypeError('nick contains "::"'));
 
     var db_key = format('nick::%s::pubkey', nick);

@@ -87,7 +87,7 @@ function Db(dbpath_or_dbobj, cb) {
   // callback receives (err, items).
   function getItemsByPrefix(prefix, cb) {
     assert(_.isString(prefix));
-    var s = db.createReadStream({start:prefix});
+    var s = self._db.createReadStream({start:prefix});
     var items = [];
     s.on('data',function(item){
       if (item.key.substr(0,prefix.length)!==prefix){
@@ -210,12 +210,15 @@ function Db(dbpath_or_dbobj, cb) {
   }           // loadState
 
 
-  /*
   // callback receives (err, client_obj)
   function getClientObj(nick, cb) {
-    //XXX
+    var k = format('nick::%s::client_obj', nick);
+    self._db.get(k, function(err, v) {
+      if (err) return cb(err);
+
+      cb(null, JSON.parse(v));
+    });
   }
-  */
 
 
   // callback receives (err)
@@ -233,7 +236,7 @@ function Db(dbpath_or_dbobj, cb) {
   self.nextWorkId = nextWorkId;
   self.getItemsByPrefix = getItemsByPrefix;
   self.loadState = loadState;
-  //self.getClientObj = getClientObj;
+  self.getClientObj = getClientObj;
   self.setClientObj = setClientObj;
   return self;
 }

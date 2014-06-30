@@ -434,7 +434,7 @@ app.post('/admin', function(req, res) {
 
   // check that this is an admin
   var client_obj = clients.get(nick);
-  if (!client_obj || client_obj.status !== 'admin') res.send(400);
+  if (!client_obj || client_obj.status !== 'admin') return res.send(400);
 
   db.getPublicKey(nick, function(err, client_pubkey) {
     if (err) {

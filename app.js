@@ -236,6 +236,7 @@ app.post('/getwork', function(req,res){
         return;
       }
       // handle ret
+      var failed = false;
       if (!_.contains([0, 2, 6, 8, 10, 14, 'SIGINT','SIGTERM'], wr.ret)) {
         // if not a "normal" code/signal, print
         log('unusual work result .ret: %j for ufoIndex %d, B1 %d', wr.ret, p_w.ufo, p_w.B1);
@@ -250,9 +251,11 @@ app.post('/getwork', function(req,res){
         return;
       }
 
-      // update B1 for this UFO
-      b1_ufos[ufoIndex] = nextB1(b1_ufos[ufoIndex]);
-      log('r_ufos[%d]: increasing B1 bound to %d', ufoIndex, b1_ufos[ufoIndex]);
+      if (!failed) {
+        // update B1 for this UFO
+        b1_ufos[ufoIndex] = nextB1(b1_ufos[ufoIndex]);
+        log('r_ufos[%d]: increasing B1 bound to %d', ufoIndex, b1_ufos[ufoIndex]);
+      }
 
       // save B1 to XXX for this UFO candidate
       //XXX

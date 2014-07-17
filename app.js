@@ -258,9 +258,6 @@ app.post('/getwork', function(req,res){
         log('r_ufos[%d]: increasing B1 bound to %d', ufoIndex, b1_ufos[ufoIndex]);
       }
 
-      // save B1 to XXX for this UFO candidate
-      //XXX
-
       // handle found
       if (wr.found) {
         if (!factor_regexp.test(wr.found)) {

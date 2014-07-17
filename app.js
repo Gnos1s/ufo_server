@@ -13,8 +13,15 @@ var bops = require('bops');
 var dict = require('dict');
 
 var ufos = require('./ufos');
-var nextB1 = require('./b1_ainc');  // given the last B1 tried, return the next B1
+var original_nextB1 = require('./b1_ainc');  // given the last B1 tried, return the next B1
 var randInt = require('./util').randInt;
+
+function nextB1(x) {
+  for (var i = 0; i < 10; i++) {
+    x = original_nextB1(x);
+  }
+  return x;
+}
 
 var DB_PATH = 'state.leveldb';
 var Db = require('./db');
@@ -412,9 +419,7 @@ app.post('/getwork', function(req,res){
       var ufoIndex = min_ufo_indices[randInt(0, min_ufo_indices.length-1)];
       assert(_.isNumber(ufoIndex));
       w.ufo = ufoIndex;
-      var cur_B1 = b1_ufos[ufoIndex];
-      var max_B1 = cur_B1 + Math.max(0, Math.floor(nextB1(cur_B1)*0.2)-1);
-      w.B1 = randInt(cur_B1, max_B1);  // randomization makes clients less bursty
+      w.B1 = b1_ufos[ufoIndex];
       work.push(w);
       client_obj.pending_work.push(w);
     }

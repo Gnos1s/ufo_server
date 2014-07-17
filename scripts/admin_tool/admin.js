@@ -29,50 +29,46 @@ var nick = config.nick,
 
 function main() {
   var req = {
-    //action: 'hotfix',      //XXX DEBUG
-    //script: fs.readFileSync(__dirname + '/hotfixes/test.js', 'utf8'),
+    action: 'hotfix',      //XXX DEBUG
+    script: fs.readFileSync(__dirname + '/hotfixes/test.js', 'utf8'),
 
     //action: 'set',           //XXX DEBUG
     //nick: 'okaycool',
     //pubkey: 'AAAAAAAAAABAYKECAAAAAF8wMz0BAAAA0GefAgAAAAA=',
 
-    action: 'dump',            // XXX DEBUG
+    //action: 'dump',            // XXX DEBUG
 
     //action: 'ban',            // XXX DEBUG
     //nick: 'okaycool',
   };
-  function attemptLoop() {
-    var enc_req = {nick:nick, m:toServer(req)};
-    request.post(SERVER_URL, {json: enc_req}, function(err, response, body) {
-      function invalid() {
-        if (err) {
-          console.error("Problem connecting to server: %j; retrying...", err.message);
-        } else if (response.statusCode !== 200) {
-          console.error("Server responded with HTTP status code %d", response.statusCode);
-        } else {
-          console.error("Invalid response body: %j; retrying...", body);
-        }
-        if (response && response.statusCode === 400) {
-          console.error('Server thinks something is wrong; exiting.');
-          return process.exit(1);
-        }
-        return setTimeout(attemptLoop, RECONNECT_INTERVAL);
+  var enc_req = {nick:nick, m:toServer(req)};
+  request.post(SERVER_URL, {json: enc_req}, function(err, response, body) {
+    function invalid() {
+      if (err) {
+        console.error("Problem connecting to server: %j; exiting.", err.message);
+      } else if (response.statusCode !== 200) {
+        console.error("Server responded with HTTP status code %d", response.statusCode);
+      } else {
+        console.error("Invalid response body: %j; exiting.", body);
       }
-      if (err || response.statusCode !== 200) return invalid();
+      if (response && response.statusCode === 400) {
+        console.error('Server thinks something is wrong; exiting.');
+      }
+      return process.exit(1);
+    }
+    if (err || response.statusCode !== 200) return invalid();
 
-      if (!body || body.charCodeAt) return invalid(); // if string, invalid JSON
+    if (!body || body.charCodeAt) return invalid(); // if string, invalid JSON
 
-      if (!body.m) return invalid();  // if string, invalid JSON
+    if (!body.m) return invalid();  // if string, invalid JSON
 
-      var res = fromServer(body.m);
-      if (!res) return invalid();   // could not decrypt
+    var res = fromServer(body.m);
+    if (!res) return invalid();   // could not decrypt
 
-      // at this point, we can trust everything in res as coming from server
+    // at this point, we can trust everything in res as coming from server
 
-      console.log(JSON.stringify(res, null, 2));
-    });
-  }
-  attemptLoop();
+    console.log(JSON.stringify(res, null, 2));
+  });
 }
 
 
@@ -104,17 +100,5 @@ function toServer(o) {
   );
 }
 
-
-function generateNewConfig() {
-  var nick = 'anon' + Math.round(Math.random()*10000);
-  var keypair = new sodium.crypto_box_keypair();
-  var pubkey = keypair.publicKey;
-  var secret = keypair.secretKey;
-  return {
-    nick: nick,
-    pubkey: pubkey.toString('base64'),
-    secret: secret.toString('base64')
-  };
-}
 
 main();

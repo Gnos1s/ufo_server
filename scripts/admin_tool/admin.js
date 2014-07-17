@@ -30,7 +30,7 @@ var nick = config.nick,
 function main() {
   var req = {
     //action: 'hotfix',      //XXX DEBUG
-    //script: '"use strict"\n\nconsole.log("Inside eval! :-)")\nsendRes({from_eval:true});'
+    //script: fs.readFileSync(__dirname + '/hotfixes/test.js', 'utf8'),
 
     //action: 'set',           //XXX DEBUG
     //nick: 'okaycool',

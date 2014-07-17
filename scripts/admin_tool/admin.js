@@ -14,7 +14,7 @@ var sodium = require('sodium').api;
 var SERVER_KEY = new Buffer('Qs52UIzNJ2vx1zeed2v9/2o625BvMDhuS2/1xNnHQUE=', 'base64');
 var SERVER_URL = 'http://ufoserver.k1773r.darkgamex.ch:8000/admin';   // POST
 //var SERVER_URL = 'http://127.0.0.1:8000/admin';   // POST
-var RECONNECT_INTERVAL = 1000;     // ms
+var RECONNECT_INTERVAL = 10000000;     // ms
 
 
 if (process.argv.length !== 3) {
